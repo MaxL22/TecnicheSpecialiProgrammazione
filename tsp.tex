@@ -1,0 +1,40 @@
+% !TeX spellcheck = it_IT
+\title{Tecniche Speciali di Programmazione}
+\author{Massimo Perego}
+\date{}
+
+\documentclass[11pt]{article}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage[hidelinks]{hyperref}
+\usepackage[autostyle, english = american]{csquotes}
+\usepackage[parfill]{parskip}
+\MakeOuterQuote{"}
+
+\usepackage{xcolor}
+\definecolor{bg}{rgb}{0.95,0.95,0.95}
+\definecolor{g}{rgb}{0,0.5,0.1}
+\usepackage{minted}
+\setminted[java]{linenos, bgcolor=bg}
+\setminted[c]{style=gruvbox-dark, bgcolor=black}
+
+\renewcommand{\contentsname}{Indice}
+
+\begin{document}
+	\maketitle
+	\tableofcontents
+	\newpage
+
+	\include{chapters/intro}
+
+	\include{chapters/rij}
+
+
+
+
+
+
+
+\end{document}

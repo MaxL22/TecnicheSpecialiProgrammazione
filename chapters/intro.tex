@@ -1,0 +1,196 @@
+% !TeX spellcheck = it_IT
+\section{Introduzione}
+
+L'idea iniziale è quella della \textbf{separazione dei compiti}: non vogliamo inquinare il codice ma separare ogni funzionalità implementata, rendendola indipendente e riutilizzabile, ovvero scrivere codice in cui ogni funzionalità è a sè stante.
+
+% Slide 01
+
+\subsection{Computational Reflection}
+
+La \textbf{reflection} può essere definita come: \textit{attività svolta da un sistema software per rappresentare e manipolare la propria struttura e/o comportamento}. Un software che, in qualche modo, si modifica.
+
+Qualche definizione (secondo Pattie Maes):
+\begin{itemize}
+	\item Un \textbf{sistema computazionale} è un sistema in grado di ragionare e agire in un ambito applicativo
+	
+	\item Un sistema computazionale è \textbf{causalmente connesso} al suo dominio se e solo se un cambio del dominio si riflette sulla computazione stessa e viceversa
+	
+	\item Un \textbf{meta-sistema} è un sistema computazionale il cui dominio applicativo è un altro sistema computazionale
+	
+	\item La \textbf{reflection} è la proprietà di ragionare e agire rispetto a sé stessi
+\end{itemize}
+
+Di conseguenza: un \textbf{sistema riflessivo} è un meta-sistema causalmente connesso a sé stesso.
+
+Dalla definizione si può evincere che:
+\begin{itemize}
+	\item Un sistema riflessivo deve essere organizzato in più livelli: definiti \textbf{base-level} e \textbf{meta-level} (rispettivamente, osservato e osservante)
+	
+	\item Il sistema in esecuzione nel meta-level osserva e manipola il sistema in esecuzione nel livello sottostante (\textbf{reflective tower})	
+\end{itemize}
+
+Caratteristiche:
+\begin{itemize}
+	\item L'entità osservata è inconsapevole di essere osservata (non ha awareness); il base-level non è a conoscenza dei livelli superiori, il controllo è trasparente all'applicazione: anche se cambia il meta-livello tutto ciò che è sopra rimane come prima, gli "accessori" possono cambiare senza che il sistema sotto se ne accorga; questa caratteristica (unawareness) è fondamentale
+	
+	\item Un sistema nel meta-level agisce su una rappresentazione (\textbf{reification}, reificazione) del sistema sottostante
+	
+	\item Un sistema e la sua reificazione sono causalmente connessi e, di conseguenza, mutualmente consistenti
+\end{itemize}
+
+I sistemi riflessivi possono essere classificati in base a \textit{what and when}: quando e cosa viene modificato dal sistema.
+
+\textit{Cosa} viene modificato, ovvero che tipo di azione riflessiva viene svolta:
+\begin{itemize}
+	\item Fare introspezione (osservare) oppure intercedere (modificare)
+	
+	\item Le modifiche possono essere strutturali e/o comportamentali
+\end{itemize}
+
+\textit{Quando} fa riferimento al momento in cui esistono entità nel meta-level:
+\begin{itemize}
+	\item \textbf{Compile-time}; non si hanno informazioni dinamiche (quindi si possono fare meno cose), ma con a disposizione il sorgente fare modifiche è "facile"
+	
+	\item \textbf{Load-time}; prima che la classe venga mai istanziata, ovvero la classe viene caricata "già modificata", non bisogna andare a cercare le entità esistenti; il sorgente rimane uguale, ma so cosa viene caricato, meno invasivo del compile-time, ma più difficile
+	
+	\item \textbf{Run-time}; il più difficile, completamente dinamico, ci sono oggetti già istanziati
+\end{itemize}
+
+La \textbf{riflessione comportamentale} permette di modificare e monitorare la computazione: i metodi chiamati, come e quando viene istanziata una classe; tutto ciò che fa parte del comportamento del programma. Alcuni esempi:
+\begin{itemize}
+	\item Catturare una chiamata a metodo e attivarne un altro
+	
+	\item Monitorare lo stato di un oggetto
+	
+	\item Creare nuovi oggetti
+	
+	\item  \dots
+\end{itemize}
+
+Tutte queste attività possono essere effettuate run-time senza supporto specifico aggiuntivo (si hanno già a disposizione le informazioni necessarie).
+
+La \textbf{riflessione strutturale} permette di ispezionare o alterare la struttura del programma. Ad esempio
+\begin{itemize}
+	\item Il codice di un metodo può essere modificato o rimosso dalla classe
+	
+	\item Nuovi metodi e ampi possono essere aggiunti
+	
+	\item \dots
+\end{itemize}
+
+Queste attività richiedono \textit{specifico supporto dall'ambiente di esecuzione} (in generale più facile con un linguaggio interpretato, difficile in Java ad esempio, in Python si ha tutto il codice a disposizione anche a run-time).
+
+Ognuna delle entità nel base-level, chiamate \textbf{referents/referenti}, ha un corrispondente nel meta-livello, quest'ultimi vengono manipolati dal meta-livello stesso. 
+
+Il corrispondente all'interno del meta-livello (reificazione) deve
+\begin{itemize}
+	\item Supportare tutte le operazioni e avere le stesse caratteristiche del referente corrispondente
+	
+	\item Essere consistente con il referente (connessione causale)
+	
+	\item Essere manipolate dalle entità del meta-livello, per evitare inconsistenze con il referente nel base-level
+\end{itemize}
+
+Il meta-livello modifica i referenti e aspetta di avere dei referenti stabili.
+
+Alcune domande da tenere in considerazione:
+\begin{itemize}
+	\item Quali entità dovrebbero essere reificate? Dipende dal linguaggio di programmazione (funzioni se è funzionale, oggetti se è OO e così via), tutto ciò che compone di fatto il sistema (fino, ad esempio, ai messaggi per gli scambi di metodo)
+	
+	\item Come e quando viene implementata la connessione causale? Dipende da quando prende piede la riflessione
+	\begin{itemize}
+		\item Run-time: la connessione causale è esplicita e deve essere mantenuta da entità super-partes, un meccanismo dinamico parte del run-time environment
+		
+		\item Compile-time: la connessione causale è implicita, base e meta-levels sono uniti durante la fase di pre-processamento; le modifiche dovute a meta-livello sono "fuse" grazie al pre-processing
+		
+		\item Load-time: in questo caso la connessione causale si comporta come a compile-time, con la differenza che verrà caricata dopo
+	\end{itemize}
+	Più si va verso il dinamismo più serve un meccanismo esterno che mantenga il sistema
+	
+	\item Quando l'esecuzione passa al meta-level? Cambiare tra i livelli dipende da quali entità vengono reificate e quando ciò avviene, assieme al modo in cui la connessione causale è gestita. Il cambio è realizzato logicamente con due azioni: 
+	\begin{itemize}
+		\item \textbf{Shift-up:} Il cambio al meta-livello avviene quando un oggetto osservato cambia, oppure un'azione sta per essere svolta; in generale quando serve un cambiamento
+		
+		\item \textbf{Shift-down:} La computazione torna al base-level in seguito a una decisione esplicita (al contrario dello shift-up) del programma nel meta-livello
+	\end{itemize}
+\end{itemize}
+
+% End L1
+
+Gli oggetti in esecuzione nel meta-livello (meta-oggetti) sono associati a uno o più referenti nel base-level. I meta-oggetti esistono a run-time e estendono o modificano semantiche o meccanismi (invocazione di metodi, accesso ai campi, creazione oggetti, \dots).
+
+Il \textbf{MOP} (\textbf{Meta-Object Protocol}) è un insieme di istruzioni (stile API, per dare un'idea) fornito dalla meta-entità per manipolare il sistema sottostante. Il set di messaggi che un meta-oggetto può comprendere.
+
+%Esempio di reflection:
+%\begin{itemize}
+%	\item Classe \texttt{Hello} con metodo \texttt{sayHello()}
+%	
+%	\item Meta-classe con metodo \texttt{invoke(sayHello)}
+%\end{itemize}
+%
+%Per arricchirlo riflessivamente, la meta-classe attiverà (per esempio) un \texttt{doLog()} e \texttt{doInvoke()}. La classe sottostante non avrà nessuna conoscenza riguardo il livello superiore.
+%
+%Prima che venga chiamato \texttt{sayHello()}, si passa al meta-livello (shift-up) che si occuperà (in questo caso) di aggiungere un log.
+
+A livello base non viene aggiunto nulla per le funzionalità accessorie, tutto ciò che è aggiuntivo viene inserito nel meta-livello, senza legarsi specificatamente a una classe sottostante (per esempio, un log deve poter loggare tutto, non solo una classe specifica).
+
+Ogni entità a livello base è coordinata da una entità nel meta-livello, la corrispondenza non è necessariamente 1 a 1 (ogni oggetto nel meta-livello può coordinare più oggetti, ad esempio group call: chiamare più target dello stesso tipo con una singola chiamata, ma anche il contrario, un oggetto base controllato da più meta-oggetti, ognuno dei quali controlla aspetti diversi).
+
+Ci sono più \textbf{modelli} possibili per fare \textbf{reflection}. Il \textbf{primo modello} è quello in cui i \textit{meta-oggetti sono una classe}, la meta-classe gestisce una classe specifica, in modo da agire su tutte le istanze della classe controllata. 
+
+Le classi svolgono la riflessione, la torre riflessiva viene dal legame di ereditarietà. Tutte le istanze della classe condividono lo stesso comportamento riflessivo (la meta-classe) è unica per tutte le istanze.
+
+\textbf{Secondo modello}: \textit{meta-classi e meta-oggetti}. Sono ancora presenti meta-classi che definiscono il comportamento della classe, ma si possono avere anche meta-oggetti (con la loro classe) associati a una specifica istanza. Il link di riflessione diventa esplicito e specifico.
+
+Nel \textbf{terzo modello} il meta-oggetto non è associato agli oggetti stessi ma a una comunicazione, si ha una \textit{reificazione dei messaggi}. Si avrà un meta-oggetto per ogni singolo metodo scambiato tra coppie di oggetti. Questo permette granularità molto fine, a costo di un'esplosione nel numero di meta-oggetti.
+
+Permette una visione globale sulla comunicazione, rendendo facili attività riflessive sulla comunicazione stessa. La vita di queste entità potrebbe anche essere molto breve: create e distrutte assieme al messaggio.
+
+Di fatto, la riflessione computazionale
+\begin{itemize}
+	\item Apre un sistema per deferire alcune decisioni
+	
+	\item Dipende dalla awareness che il sistema ha di sé, il codice sottostante non è aware del fatto che sarà esteso tramite riflessione
+	
+	\item Specializza alcuni dei meccanismi base dell'OO (costruttori, chiamate, \dots), sfrutta tutti i meccanismi classici dell'OOP (in maniera non specifica)
+\end{itemize}
+L'obiettivo è una migliore comprensione dei meccanismi OO e della loro implementazione.
+
+% Slide 02
+
+\subsection{MOP and SoC}
+
+\subsubsection{Meta-Object Protocol MOP}
+
+L'idea del MOP è mettere a disposizione uno strumento che permette di estendere il sistema sottostante, senza conoscerlo. L'idea è quella di un'interfaccia comune per tutte le casistiche in cui si vuole estendere qualcosa di esistente. Questa è l'idea di riflessione computazionale.
+
+Di conseguenza, si vuole mantenere un uso black-box del sistema base, il cui comportamento e struttura possono essere modificati dinamicamente, lasciando aperti al sistema del meta-livello i dettaglio dell'implementazione del base-level.
+
+Il MOP permette di mantenere nascosti i dettagli implementativi, andando a interagire in maniera diversa da quella originariamente pensata dal codice "modificato" (grey-box).
+
+Ci sono 3 modi per aprire un sistema:
+\begin{itemize}
+	\item \textbf{Introspezione:} solamente guardare, abilità del sistema di osservare lo stato e struttura del sistema stesso
+	
+	\item \textbf{Intercessione:} modificare anche comportamento e struttura del sistema stesso
+	
+	\item \textbf{Invoke:} abilità del sistema di applicare le funzionalità del sistema (non si può aggiungere codice, intercessione ridotta)
+\end{itemize}
+
+\subsubsection{Separation of Concerns SoC}
+
+Un'applicazione si può dividere in
+\begin{itemize}
+	\item \textbf{Core functionality}: le funzionalità principali del sistema, gli "obiettivi" (e.g., per un sistema bancario: account, operazioni, \dots)
+	
+	\item \textbf{Nonfunctional concerns:} tutte le funzionalità accessorie (cross cutting concerns), tutte le funzionalità necessarie per il sistema, ma non parte della "base" dell'applicazione (e.g. ciò che concerne sicurezza, distribuzione, concorrenza, \dots)
+\end{itemize}
+Un sistema è composto da entrambe le cose, le si vuole separarle per migliorare riusabilità e ridurre inquinamento del codice.
+
+Tradizionalmente, la SoC viene considerata solo durante la fase di design, e il codice diventa un mix di tutti i concerns. 
+
+Il gap tra design e implementazione, porta a poca riusabilità e estensibilità, oltre che essere error prone. La SoC punta a permettere la separazione anche durante l'implementazione (reflection, aspect-oriented programming).
+
+La reflection permette di separare aspetti functional (core) e nonfunctional, portando a migliore riusabilità, migliore stabilità del sistema e dando la possibilità di sviluppare indipendentemente aspetti diversi.
+
+%End L2

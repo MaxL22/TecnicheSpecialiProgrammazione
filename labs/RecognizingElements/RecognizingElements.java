@@ -14,13 +14,39 @@
  *  iii) outputs whether it is a method or a field and
  *  iv) the full signature included types, visibility and scope.
  */
+import java.util.stream.*;
+import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Objects;
+import java.util.Optional;
+import java.lang.reflect.*;
+
 public class RecognizingElements {
+    record tuplez (Class classe, Optional<? extends Member> optMember) {}
+
+    public static tuplez findMember (String m, Class cls) {
+        return new tuplez(cls, Stream.iterate(cls, c -> c.getSuperclass())
+                          .takeWhile(Objects::nonNull)
+                          .flatMap(mem -> Stream.concat(Arrays.stream(mem.getDeclaredMethods()), Arrays.stream(mem.getDeclaredFields())))
+                          .filter(a -> a.getName().equals(m))
+                          .findFirst());
+    }
+
+    public static void printMember (tuplez t) {
+        System.out.println();
+        System.out.println("Member " + t.optMember().get() + " is declared in " + t.classe());
+        System.out.println("It's a " + ((t.optMember().get() instanceof Field) ? "Field" : "Method"));
+        System.out.println("Signature:");
+        System.out.println(t.optMember().get());
+    }
+
     public static void main () {
         // Possible input
         String[] classNames = {
-            "String",
-            "ArrayList",
-            "HashMap"
+            String.class.getName(),
+            ArrayList.class.getName(),
+            HashMap.class.getName()
         };
         String[] memberNames = {
             // String methods
@@ -54,5 +80,19 @@ public class RecognizingElements {
             // Non-existent member for testing
             "nonexistentMember"
         };
+        // Find the method/field
+        Arrays.stream(memberNames)
+              .map(member -> Arrays.stream(classNames)
+        .map(cls -> {try {
+            return findMember(member, Class.forName(cls));
+        }
+        catch (Exception e) {
+            throw new RuntimeException();
+        }
+                               })
+        .filter(o -> o.optMember().isPresent())
+        .findFirst())
+        .filter(c -> c.isPresent())
+        .forEach(c -> printMember(c.get()));
     }
 }

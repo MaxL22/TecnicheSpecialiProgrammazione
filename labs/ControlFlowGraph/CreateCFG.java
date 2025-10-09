@@ -26,27 +26,24 @@ import java.util.Optional;
 
 public class CreateCFG {
     public static void main (String... args) {
-        ControlFlowGraph[] graphs;
-        graphs = Arrays.stream(Arrays.stream(args)
-        .map(c -> {
+        ControlFlowGraph graph = new ControlFlowGraph(Arrays.stream(args)
+        .map((String c) -> {
             try {
                 return Optional.of(Class.forName(c));
             }
             catch (ClassNotFoundException e) {
-                System.out.println("Class " + c + " not found.");
+                System.err.println("Class " + c + " not found.");
                 return Optional.empty();
             }
             catch (Exception e) {
-                System.out.println("[ERROR] " + e);
+                System.err.println("[ERROR] " + e);
                 throw new RuntimeException();
             }
         })
-        .filter(o -> o.isPresent())
-        .map(o -> o.get())
-        .toArray(Class[]::new))
-        .map(c -> new ControlFlowGraph(c))
-        .toArray(ControlFlowGraph[]::new);
+        .filter(o  -> o.isPresent())
+        .map( o -> o.get())
+        .toArray(Class<?>[]::new));
 
-        // TODO: output
+        System.out.println(graph.toDot());
     }
 }

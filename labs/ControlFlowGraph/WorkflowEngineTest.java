@@ -1,9 +1,10 @@
 public class WorkflowEngineTest {
+    private static final MathOperationsTest m = new MathOperationsTest();
 
     // testWorkflowExecution() calls initializeWorkflow(), executeWorkflow(), finalizeWorkflow()
-    @Invokes(methodName = "initializeWorkflow", callerMethod = "testWorkflowExecution")
-    @Invokes(methodName = "executeWorkflow", callerMethod = "testWorkflowExecution")
-    @Invokes(methodName = "finalizeWorkflow", callerMethod = "testWorkflowExecution")
+    @Invokes(calledMethod = "initializeWorkflowExecution", calledClass = "WorkflowEngineTest")
+    @Invokes(calledMethod = "executeWorkflow", calledClass = "WorkflowEngineTest")
+    @Invokes(calledMethod = "finalizeWorkflow", calledClass = "WorkflowEngineTest")
     public void testWorkflowExecution() {
         initializeWorkflow();
         executeWorkflow();
@@ -11,15 +12,15 @@ public class WorkflowEngineTest {
     }
 
     // initializeWorkflow() calls loadConfiguration()
-    @Invokes(methodName = "loadConfiguration", callerMethod = "initializeWorkflow")
+    @Invokes(calledMethod = "loadConfiguration", calledClass = "WorkflowEngineTest")
     public void initializeWorkflow() {
         loadConfiguration();
         System.out.println("Workflow initialized.");
     }
 
     // executeWorkflow() calls processStep() and logProgress()
-    @Invokes(methodName = "processStep", callerMethod = "executeWorkflow")
-    @Invokes(methodName = "logProgress", callerMethod = "executeWorkflow")
+    @Invokes(calledMethod = "processStep", calledClass = "WorkflowEngineTest")
+    @Invokes(calledMethod = "logProgress", calledClass = "WorkflowEngineTest")
     public void executeWorkflow() {
         processStep();
         logProgress();
@@ -39,5 +40,20 @@ public class WorkflowEngineTest {
 
     public void logProgress() {
         System.out.println("Progress logged.");
+    }
+
+    @Invokes(calledMethod = "computeSum", calledClass = "MathOperationsTest")
+    public static void useSmthng() {
+        m.computeSum();
+    }
+
+    @Invokes(calledMethod = "computeAverage", calledClass = "MathOperationsTest")
+    public static void useSmthng2() {
+        m.computeAverage();
+    }
+
+    @Invokes(calledMethod = "countElements", calledClass = "MathOperationsTest")
+    public static void useSmthng3() {
+        m.countElements();
     }
 }

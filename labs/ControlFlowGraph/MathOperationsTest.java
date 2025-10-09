@@ -1,16 +1,18 @@
 public class MathOperationsTest {
+    public MathOperationsTest () {
+    }
 
     // testCalculate() calls computeSum() and computeAverage()
-    @Invokes(methodName = "computeSum", callerMethod = "testCalculate")
-    @Invokes(methodName = "computeAverage", callerMethod = "testCalculate")
+    @Invokes(calledMethod = "computeSum", calledClass = "MathOperationsTest")
+    @Invokes(calledMethod = "computeAverage", calledClass = "MathOperationsTest")
     public void testCalculate() {
         computeSum();
         computeAverage();
     }
 
     // computeAverage() calls computeSum() and countElements()
-    @Invokes(methodName = "computeSum", callerMethod = "computeAverage")
-    @Invokes(methodName = "countElements", callerMethod = "computeAverage")
+    @Invokes(calledMethod = "computeSum", calledClass = "MathOperationsTest")
+    @Invokes(calledMethod = "countElements", calledClass = "MathOperationsTest")
     public void computeAverage() {
         computeSum();
         countElements();

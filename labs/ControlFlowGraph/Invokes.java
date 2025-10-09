@@ -4,6 +4,6 @@ import java.lang.annotation.*;
 @Target(ElementType.METHOD)
 @Repeatable(Invocations.class)
 public @interface Invokes {
-    String methodName();
-    String callerMethod();
+    String calledMethod();
+    String calledClass();
 }

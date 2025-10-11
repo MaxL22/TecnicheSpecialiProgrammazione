@@ -43,7 +43,9 @@ public class Mocking {
             ITest orig = new Testing();
 
             Mocker m = new Mocker(orig.getClass().getInterfaces()[0]);
-            m.MethodReturns(ITest.class.getMethods()[0].getName(), 2, 3);
+            // It's slightly non-deterministic, better to just use the string
+            // m.MethodReturns(ITest.class.getMethods()[0].getName(), 2, 3);
+            m.MethodReturns("method1", 2, 3);
             ITest proxy = (ITest) Proxy.newProxyInstance(orig.getClass().getClassLoader(),
                           orig.getClass().getInterfaces(),
                           m);

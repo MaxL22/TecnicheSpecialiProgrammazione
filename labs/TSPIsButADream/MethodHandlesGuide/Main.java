@@ -1,6 +1,7 @@
 /*
  * Simple guide to using MethodHandles
  * (Not made by me)
+ * Si ringrazia TititinoThePrologGuy
  */
 
 import java.lang.invoke.MethodHandle;

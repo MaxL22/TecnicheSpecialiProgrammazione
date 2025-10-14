@@ -1,0 +1,6 @@
+Step per riprodurre:
+  1. compilare il file `Test1.java` per ottenere `Test1.class`
+  2. compilare tutto in `./` (`javac *.java`)
+  3. criptare il target (`java Encrypt 10 Test1`)
+  4. eliminare il class file in chiaro (`rm Test1.class`)
+  5. eseguire il main con il classloader custom (`java -Djava.system.class.loader=EncryptedClassLoader Main`)

@@ -19,7 +19,9 @@ public class VerboseClassLoader extends ClassLoader {
     /*
      * Commenting these two functions and removing the `if`
      * leads to less classes printed
-     * why though? The print is outside?
+     * This is because it starts loading classes,
+     * then delegates to the father, which loades main
+     * and with it all other classes
      */
     private Class<?> getClass(String name) throws ClassNotFoundException {
         String file = name.replace('.', File.separatorChar) + ".class";

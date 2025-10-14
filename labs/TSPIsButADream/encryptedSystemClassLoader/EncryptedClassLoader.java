@@ -10,7 +10,7 @@ public class EncryptedClassLoader extends ClassLoader {
 
     public EncryptedClassLoader(ClassLoader parent) {
         super(parent);
-        this.cipher = new CaesarCipher(KEY);;
+        this.cipher = new CaesarCipher(KEY);
     }
 
     public EncryptedClassLoader(Cipher cipher) {
@@ -19,16 +19,34 @@ public class EncryptedClassLoader extends ClassLoader {
     }
 
     @Override
+    public Class<?> loadClass(String name) throws ClassNotFoundException {
+        if (name.equals("Main")) {
+            try {
+                File classFile = new File("Main.class");
+                byte[] buf = new byte[(int) classFile.length()];
+
+                FileInputStream bytes = new FileInputStream(classFile);
+                bytes.read(buf);
+                bytes.close();
+                return defineClass(name, buf, 0, buf.length);
+            } catch (IOException e) {
+                throw new ClassNotFoundException();
+            }
+        } else {
+            return super.loadClass(name);
+        }
+    }
+
+    @Override
     public Class<?> findClass(String name) throws ClassNotFoundException {
-        System.out.println("I'm finding it");
         byte[] b = this.cipher.decrypt(getClassData(name));
         return defineClass(name, b, 0, b.length);
     }
 
     private byte[] getClassData(String name) throws ClassNotFoundException {
-        String classFilePath = name.replace('.', '/') + ".nidki";
+        String classPath = name.replace('.', '/');
         try {
-            File classFile = new File(classFilePath);
+            File classFile = new File(classPath + ".nidki");
             byte[] buf = new byte[(int) classFile.length()];
 
             FileInputStream bytes = new FileInputStream(classFile);

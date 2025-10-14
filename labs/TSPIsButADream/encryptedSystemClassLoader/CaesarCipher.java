@@ -1,4 +1,5 @@
 public class CaesarCipher implements Cipher {
+
     private final byte key;
 
     public CaesarCipher(byte key) {

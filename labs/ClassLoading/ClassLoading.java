@@ -16,8 +16,45 @@
  * let's find a way to take rid of such a behavior
  */
 
+/*
+ * Exec with:
+ * javac NewAndImprovedClassLoader.java && \
+  java -Djava.system.class.loader=NewAndImprovedClassLoader ClassLoading.java
+ */
+import java.io.File;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+
 public class ClassLoading {
     public static void main (String... args) {
+        try {
+            // Create a temporary file
+            File file = File.createTempFile("demo_", ".txt");
 
+            // Write some info to it
+            BufferedWriter writer = new BufferedWriter(new FileWriter(file));
+            LocalDate today = LocalDate.now();
+            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+            writer.write("Today's date is: " + fmt.format(today));
+            writer.newLine();
+
+            InetAddress addr = InetAddress.getLocalHost();
+            writer.write("Host name: " + addr.getHostName());
+            writer.newLine();
+            writer.write("Host address: " + addr.getHostAddress());
+            writer.newLine();
+
+            writer.close();
+
+            Arrays.stream(new int[0]);
+        } catch (IOException e) {
+            System.out.println("[ERROR] " + e);
+        }
     }
 }

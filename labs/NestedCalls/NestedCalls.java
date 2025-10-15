@@ -23,10 +23,20 @@ public class NestedCalls implements NestedCallsI {
     }
 
     public static void main(String... args) {
-        NestedCallsI original = new NestedCalls();
-        NestedCallsI proxy = (NestedCallsI) Proxy.newProxyInstance(original.getClass().getClassLoader(), original.getClass().getInterfaces(), new NestedHandler(original));
+        NestedCallsI orig = new NestedCalls();
+        NestedCallsI p = (NestedCallsI) Proxy.newProxyInstance(NestedCallsI.class.getClassLoader(),
+                         new Class[] {NestedCallsI.class},
+                         new NestedHandler());
 
-        System.out.println(proxy.a());
+        System.out.println("Normal call:");
+        System.out.println("a(): " + orig.a());
+        System.out.println("b(a()): " + orig.b(orig.a()));
+        System.out.println("c(b(a())): " + orig.c(orig.b(orig.a())));
+        System.out.println();
+        System.out.println("Proxy call:");
+        System.out.println("a(): " + p.a());
+        System.out.println("b(a()): " + p.b(orig.a()));
+        System.out.println("c(b(a())): " + p.c(orig.b(orig.a())));
     }
 }
 

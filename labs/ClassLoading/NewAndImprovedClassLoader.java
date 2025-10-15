@@ -4,6 +4,7 @@ import java.io.IOException;
 
 public class NewAndImprovedClassLoader extends ClassLoader {
     private int counter;
+    // Just a minimal set of `java.lang` classes which can't be removed
     private static final String[] whitelist = {
         "java.lang.Object",
         "java.lang.Throwable",
@@ -25,8 +26,10 @@ public class NewAndImprovedClassLoader extends ClassLoader {
 
     @Override
     public Class<?> loadClass (String name) throws ClassNotFoundException {
+        // Prints the class loaded
         counter++;
         System.out.println("[LOADER] Loading class " + counter + name);
+        // Hijack the main, otherwise it doesn't load anything else
         String n = ClassLoading.class.getName();
         if (name.equals(n)) {
             try {
@@ -40,17 +43,14 @@ public class NewAndImprovedClassLoader extends ClassLoader {
                 throw new ClassNotFoundException();
             }
         }
-
+        // Block classes with a runtime exception
         if ((name.startsWith("java.lang") || name.startsWith("java.util")) && !checkList(name)) {
             System.out.println("Fuck you " + name);
             throw new RuntimeException();
         }
+        // If all else is not relevant, call the father (the serious class loader)
         return super.loadClass(name);
     }
-
-    @Override
-    protected Class<?> findClass(String name) throws ClassNotFoundException {
-        return super.findClass(name);
-    }
-
+    // The findClass() here it's not needed, all classes are either handled or given to the father
+    //  if the father fails, tough luck
 }

@@ -2,7 +2,6 @@ import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
 import java.util.Set;
-import javax.tools.Diagnostic.Kind;
 
 
 // It has to extend AbstractProcessor
@@ -19,7 +18,6 @@ public class SimpleProcessor extends AbstractProcessor {
             for (Element e : elements) {
                 System.out.println("[PROCESSOR] Found annotation: " + annotation.getSimpleName() + " on element: " + e.getSimpleName());
             }
-            processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "AAA");
         }
         // To not claim the annotations exclusively
         return false;

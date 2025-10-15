@@ -13,16 +13,19 @@
 
 import java.lang.reflect.*;
 
+// Interface to mimic
 interface ITesting {
     public void smthng ();
 }
 
+// Concrete class implementing the interface
 class Test implements ITesting {
     public void smthng () {
         System.out.println("Smthng");
     }
 }
 
+// Proxy class, implements the invoke()
 class SimpleProxy implements InvocationHandler {
     private Object base;
 
@@ -31,17 +34,28 @@ class SimpleProxy implements InvocationHandler {
     }
 
     public Object invoke(Object proxy, Method m, Object[] args) {
+        Object ret = null;
         System.out.println("Method name: " + m.getName());
         System.out.println("Declaring class: " + m.getDeclaringClass());
         try {
-            return m.invoke(this.base, args);
+            ret = m.invoke(this.base, args);
         } catch (Exception e) {
             System.out.println("[ERROR] " + e);
-            return null;
         }
+        return ret;
     }
 }
 
+/*
+ * The proxy has to be created through
+ * Proxy.newProxyInstance(ClassLoader, Interfaces, Handler), where
+ *  - ClassLoader is a class loader (just use the one of a base object)
+ *  - Interfaces is a Class<?>[] containing all interfaces to be mimicked
+ *  - Handler is an instance of the Proxy class
+ *
+ * The proxy can then use all the methods of the interface mimicked,
+ * returning the value given by the defined invoke()
+ */
 public class SimpleProxyMain {
     public static void main (String... args) {
         ITesting orig = new Test();

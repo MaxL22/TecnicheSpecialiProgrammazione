@@ -1,7 +1,7 @@
 /*
  * Just a CL Test
  * What does the CL actually do?
- * Why are the classes printed different by removing the second part of the class loader?
+ * Loads the classes, duh
  */
 public class EmptyProgram {
     public static void main(String[] args) {

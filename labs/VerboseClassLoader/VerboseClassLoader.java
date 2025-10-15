@@ -1,7 +1,6 @@
 import java.io.*;
 
 public class VerboseClassLoader extends ClassLoader {
-
     public VerboseClassLoader(ClassLoader parent) {
         super(parent);
     }
@@ -10,7 +9,7 @@ public class VerboseClassLoader extends ClassLoader {
     @Override
     public Class<?> loadClass(String name) throws ClassNotFoundException {
         System.out.println("Loading Class '" + name + "'");
-        // hijacks loading the classes that don't start with `java`
+        // hijacks loading the classes that don't start with `java` (here only the user classes)
         if (!name.startsWith("java"))
             return getClass(name);
         return super.loadClass(name);
@@ -18,10 +17,9 @@ public class VerboseClassLoader extends ClassLoader {
 
     /*
      * Commenting these two functions and removing the `if`
-     * leads to less classes printed
-     * This is because it starts loading classes,
-     * then delegates to the father, which loades main
-     * and with it all other classes
+     * leads to printing only the main,
+     * which will be delegated to the father,
+     * along with all other classes loaded by the main
      */
     private Class<?> getClass(String name) throws ClassNotFoundException {
         String file = name.replace('.', File.separatorChar) + ".class";

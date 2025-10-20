@@ -1,0 +1,60 @@
+%Change slide, 11?
+\section{Javassist}
+
+Javassist è una libreria per modificare bytecode e permette la modifica di classi a load-time e la creazione di nuove classi a runtime.s
+
+Si tratta di una API ad alto livello, non richiede di essere a conoscenza delle specifiche del bytecode; 100\% Java, compliant Java 21, basato sul modello di class loading.
+
+Con Javassist, la fase di loading è "dirottata" a un translator, che restituisce la classe modificata.
+
+Migliora la reflection di Java con una reificazione parallela di classi e tipi primitivi di Java; \texttt{CtClass}, \texttt{CtMethod}, \texttt{CtConstructor}, \texttt{CtField} (\texttt{Ct} sta per "concrete"), \texttt{FieldInitializer}, \texttt{CtPrimitiveType}, \texttt{Modifier}, \dots
+
+Introduce nuove classi per scomporre il processo di class loading e permettere di modificare le classi a load time; \texttt{Loader}, \texttt{ClassPool}, \texttt{ClassPath}, \texttt{Translator}.
+
+\paragraph{\texttt{ClassPool}:} Un container di oggetti \texttt{CtClass}, ogni classe caricata passa attraverso questo oggetto:
+\begin{itemize}
+    \item \texttt{get(String)} torna un riferimento a \texttt{CtClass}
+
+    \item \texttt{toClass()} traduce una \texttt{CtClass} in un formato class standard
+
+    \item \texttt{insertClassPath}, \texttt{appendClassPath} permettono di gestire il processo di lookup delle classi
+
+    \item \texttt{make*} permette di creare classi e interfacce da zero
+
+    \item servizi statici permettono di ottenere il class pool con o senza \texttt{Translator}
+\end{itemize}
+
+\paragraph{\texttt{Translator}:} Un osservatore di \texttt{Loader}. Questa interfaccia dovrebbe essere implementata per tradurre un class file quando viene caricato all'interno della JVM
+\begin{itemize}
+    \item \texttt{start(ClassPool)} inizializza il translator
+
+    \item \texttt{onLoad(ClassPool, String)} operazioni svolte prima che la classe venga data al loader
+\end{itemize}
+
+
+Per modificare le classi, ci sono alcune limitazioni (anche se non è sempre ben chiaro il perché). Nello specifico, si può:
+\begin{itemize}
+    \item Inserire una chiamata al metodo \texttt{m} prima o dopo un'altra chiamata a metodo
+
+    \item Reindirizzare una chiamata a un altro metodo
+
+    \item Reindirizzare un accesso a un campo a un altro campo
+
+    \item Rimpiazzare un accesso a un campo con una chiamata a un metodo statico
+
+    \item Rimpiazzare uno statement \texttt{new} con una chiamata a un metodo statico
+\end{itemize}
+
+%TODO: da finire, slide pack 10, da s9 in poi
+
+%Voglio aggiornare il software senza doverlo riscrivere, vogliamo trasformare applicazioni che usano la vecchia interfaccia con la nuova, senza ricompilare.
+
+%Per le modifiche banali, note ad alto livello, serve qualcuno che scrive il bytecode da sostituire: il compilatore lo sa fare
+
+%s9
+
+%L'adapter non fa altro ...
+
+%Chiede al compilatore di scrivere il bytecode e lo sostituisce tramite reflection.
+
+%to end

@@ -15,69 +15,136 @@ Alcuni tool per la bytecode instrumentation:
     \item \href{https://github.com/soot-oss/soot}{\texttt{Soot}}/\href{https://github.com/soot-oss/SootUp}{\texttt{SootUp}}
 \end{itemize}
 
-%s4
+\paragraph{Difficoltà della bytecode instrumentation:}
+\begin{itemize}
+    \item Creare una rappresentazione intermedia: tutti gli oggetti devono essere rappresentati e tale rappresentazione può diventare difficile da gestire con la dimensione
 
-L'unica cosa che non possiamo andare a modificare è il main, in quanto non si possono modificare le funzioni/metodi già in esecuzione, perchè?
-...
+    \item Applicare multiple trasformazioni in serie: disfare i cambiamenti può diventare complicato senza tracciare tutti gli step intermedi
 
-Uno dei problemi di Java è che la classe deve passare attraverso il verifier, il quale verifica che la classe sia conforme a? Bisogna in qualche modo?
-...
+    \item Mantenere il class file verificabile: in termini di consistenza e dimensione
 
-%s5
+    \item Bloat all'interno del class pool: eliminare "dead entry" potrebbe richiedere di analizzare l'intera classe
 
-%s6
+    \item Inserire instrumentazione corretta: verificare la correttezza e consistenza
+
+    \item Thread safety: bisogna considerare possibili race conditions o deadlock
+\end{itemize}
+
+%L'unica cosa che non possiamo andare a modificare è il main, in quanto non si possono modificare le funzioni/metodi già in esecuzione, perchè?
+
+Per comprendere l'instrumentazione a livello di bytecode dobbiamo conoscere:
+\begin{itemize}
+    \item La JVM
+
+    \item Il formato dei class file
+
+    \item Il bytecode instruction set
+\end{itemize}
+
+%Uno dei problemi di Java è che la classe deve passare attraverso il verifier, il quale verifica che la classe sia conforme a? Bisogna in qualche modo?
+
+\subsection{La JVM}
+
+I programmi scritti in Java vengono compilati in un formato portabile binario, chiamato \textbf{bytecode}.
+
+Ogni classe, record, enum e interfaccia viene rappresentato da un singolo class file, il quale contiene tutti i dati della classe e le istruzioni in bytecode. Questi file sono \textbf{caricati dinamicamente} ed eseguiti dalla JVM.
 
 %s7
-... quando compilato, viene aggiunto un costrutture di default che non fa altro che creare un oggetto
+%... quando compilato, viene aggiunto un costrutture di default che non fa altro che creare un oggetto
 
 %s8
+La JVM simula una CPU stack-based. Ogni frame ha uno stack di operandi e un array di variabili locali:
+\begin{itemize}
+    \item Lo stack di operandi è usato per le computazioni e ricevere il valore di ritorno di un metodo chiamato
 
-...
+    \item Le variabili locali servono da registri e sono usate per passare gli argomenti ai metodi
+\end{itemize}
 
-%s12
-Attributes sono le annotazioni, per poi andare a ritrovarle?
+Sono possibili 256 opcode, dei quali 202 sono in uso, 51 sono riservati per usi futuri e 3 sono riservati permanentemente per uso interno: due forniscono trap handling, il terzo supporta i breakpoint.
 
-%s13
-Abbiamo la definizione in C del ClassFile, in quanto la JVM è scritta in C.
-...
-Le versioni (soprattuto la major) servono a stabilire le versioni di Java in cui funziona il file.
-...
-constant pool contiene tutto ciò che è statico: nomi, ...
-...
-access flags funzionano come i permessi linux, dai permessi esce un numero
+\paragraph{Bytecode instruction set:}
+\begin{itemize}
+    \item Control transfer: \texttt{goto}, \texttt{jsr}, \texttt{ret}, \texttt{if*}, \texttt{cmp*}
 
-%s14
-Bytecode Instrumentation
-Motivi: ...
+    \item Method invocation and return:
+    \begin{itemize}
+        \item Chiamate a metodi: \texttt{invokestatic}, \texttt{invokevirtual}, \texttt{invokeinterface}, \texttt{invokespecial}, \texttt{invokedynamic}
 
-%up to s15
+        \item Return dai metodi: \texttt{*return}, e.g., \texttt{ireturn}, \texttt{dreturn}, \dots
+    \end{itemize}
 
-%Change slide, 11?
+    \item Stack management e load/store operations: \texttt{pop}, \texttt{push}, \texttt{dup}, \texttt{*load}, \texttt{*store}, \dots
 
-Non Standard MOPs: Javassist
+    \item Object creation and manipulation:
+    \begin{itemize}
+        \item Creazione di oggetti: \texttt{new}, \texttt{newarray}, \texttt{anewarray}, \texttt{anewmultiarray}
 
-%intro s2
+        \item Manipolazione di oggetti: \texttt{getfield}, \texttt{putfield}, \texttt{getstatic} and \texttt{putstatic}
+    \end{itemize}
 
-%s3
-la fase di loading è "dirottata" a un translator, che restituisce la classe modificata.
+    \item Arithmetic and logic operations: \texttt{*add}, \texttt{*div}, \dots
 
-%Ct sta per Concrete
+    \item Type conversions and checks: \texttt{f2i}, \texttt{checkcast}, \texttt{typecast}, \texttt{instanceof}
+\end{itemize}
 
-...
-%s7
-Per modificare le classi, ci sono alcune limitazioni (anche se non è sempre chiaro il perché). Nello specifico, si può:
-...
+Con \texttt{*} si intende indicare varie versioni del comando, solitamente con una lettera che indica il tipo su cui agisce il comando.
 
-%s8
-Si può un po' ignorare l'esistenza del bytecode, nonstante stiamo effettivametne modificando il bytecode stesso.
-...
-Voglio aggiornare il software senza doverlo riscrivere, vogliamo trasformare applicazioni che usano la vecchia interfaccia con la nuova, senza ricompilare.
-Per le modifiche banali, note ad alto livello, serve qualcuno che scrive il bytecode da sostituire: il compilatore lo sa fare
+\subsection{Formato dei class file}
 
-%s9
+Il codice compilato è rappresentato tramite un formato binario indipendente dall'hardware, generalmente all'interno di un file chiamato \textbf{class file}.
 
-L'adapter non fa altro ...
+Il class file definisce la rappresentazione di una classe o interfaccia, consiste di uno stream di byte e di una singola struttura \texttt{ClassFile}.
 
-Chiede al compilatore di scrivere il bytecode e lo sostituisce tramite reflection.
+La definizione in del ClassFile è in C, in quanto la JVM è scritta in C
+\begin{verbatim}
+ClassFile {
+    u4 magic;
+    u2 minor_version;
+    u2 major_version;
+    u2 constant_pool_count;
+    cp_info constant_pool[constant_pool_count-1];
+    u2 access_flags;
+    u2 this_class;
+    u2 super_class;
+    u2 interfaces_count;
+    u2 interfaces[interfaces_count];
+    u2 fields_count;
+    field_info fields[fields_count];
+    u2 methods_count;
+    method_info methods[methods_count];
+    u2 attributes_count;
+    attribute_info attributes[attributes_count];
+}
+\end{verbatim}
+Dove:
+\begin{itemize}
+    \item \texttt{magic} sono i magic number del formato (\texttt{0xCAFEBABE})
 
-%to end
+    \item \texttt{minor\_version}, \texttt{major\_version}: le versioni di Java in cui funziona il file (con un offset di 44)
+
+    \item \texttt{constant\_pool\_count}: il numero (+1) di entry all'interno della constant pool
+
+    \item \texttt{constant\_pool[]}: contiene tutto ciò che è statico, come nomi di classi, interfacce, metodi, \dots
+
+    \item \texttt{access\_flags}: i permessi di accesso alla classe/interfaccia, funzionano come i permessi linux, esce un numero
+
+    \item \texttt{interfaces\_count}: il numero di interfacce implementate dalla classe/interfaccia
+
+    \item \texttt{interfaces[]}: ogni entry deve essere un indice valido della constant pool table
+
+    \item \texttt{fields\_count}: il numero di \texttt{field\_info} all'intero della fields table
+
+    \item \texttt{fields[]}: ogni entry deve essere una \texttt{field\_info} che descrive il campo di una classe
+
+    \item \texttt{methods\_count}: denota il numero di \texttt{method\_info} nella methods table
+
+    \item \texttt{methods[]}: ogni entry deve essere una \texttt{method\_info} che descrive un metodo della classe
+
+    \item \texttt{attributes\_count}: denota il numero di \texttt{attribute\_info} all'interno della attributes table
+
+    \item \texttt{attributes[]}: ogni entry deve essere una \texttt{attribute\_info} che descrive gli attributi della classe
+
+    \item \texttt{this\_class}, \texttt{super\_class}: riferimenti alla constant pool
+\end{itemize}
+
+%S14 missing, non importante

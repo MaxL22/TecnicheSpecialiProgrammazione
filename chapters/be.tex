@@ -1,0 +1,83 @@
+%slide 11, poi slide 10? Sono invertite
+\section{Bytecode Engineering}
+
+Con bytecode engineering intendiamo, preso il contenuto di una classe (di un file \texttt{.class}), riuscire a modificare il codice, prima dell'istanziazione degli oggetti. In questo modo le modifiche vengono applicate a load time, senza rischiare istanze non-modificate "in giro" (non vuol dire che a runtime sia impossibile fare modifiche, ma è più difficile).
+% C'è un video di loro che cambiano un gioco a runtime per questa cosa
+
+Alcuni tool per la bytecode instrumentation:
+\begin{itemize}
+    \item \href{https://asm.ow2.io/}{\texttt{ASM}}
+
+    \item \href{https://commons.apache.org/proper/commons-bcel/}{\texttt{BCEL - Bytecode Engineering Library}}
+
+    \item \href{https://www.javassist.org/}{\texttt{Javassist - Java programming Assistant}}
+
+    \item \href{https://github.com/soot-oss/soot}{\texttt{Soot}}/\href{https://github.com/soot-oss/SootUp}{\texttt{SootUp}}
+\end{itemize}
+
+%s4
+
+L'unica cosa che non possiamo andare a modificare è il main, in quanto non si possono modificare le funzioni/metodi già in esecuzione, perchè?
+...
+
+Uno dei problemi di Java è che la classe deve passare attraverso il verifier, il quale verifica che la classe sia conforme a? Bisogna in qualche modo?
+...
+
+%s5
+
+%s6
+
+%s7
+... quando compilato, viene aggiunto un costrutture di default che non fa altro che creare un oggetto
+
+%s8
+
+...
+
+%s12
+Attributes sono le annotazioni, per poi andare a ritrovarle?
+
+%s13
+Abbiamo la definizione in C del ClassFile, in quanto la JVM è scritta in C.
+...
+Le versioni (soprattuto la major) servono a stabilire le versioni di Java in cui funziona il file.
+...
+constant pool contiene tutto ciò che è statico: nomi, ...
+...
+access flags funzionano come i permessi linux, dai permessi esce un numero
+
+%s14
+Bytecode Instrumentation
+Motivi: ...
+
+%up to s15
+
+%Change slide, 11?
+
+Non Standard MOPs: Javassist
+
+%intro s2
+
+%s3
+la fase di loading è "dirottata" a un translator, che restituisce la classe modificata.
+
+%Ct sta per Concrete
+
+...
+%s7
+Per modificare le classi, ci sono alcune limitazioni (anche se non è sempre chiaro il perché). Nello specifico, si può:
+...
+
+%s8
+Si può un po' ignorare l'esistenza del bytecode, nonstante stiamo effettivametne modificando il bytecode stesso.
+...
+Voglio aggiornare il software senza doverlo riscrivere, vogliamo trasformare applicazioni che usano la vecchia interfaccia con la nuova, senza ricompilare.
+Per le modifiche banali, note ad alto livello, serve qualcuno che scrive il bytecode da sostituire: il compilatore lo sa fare
+
+%s9
+
+L'adapter non fa altro ...
+
+Chiede al compilatore di scrivere il bytecode e lo sostituisce tramite reflection.
+
+%to end

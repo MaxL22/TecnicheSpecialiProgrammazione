@@ -1,0 +1,91 @@
+\section{OpenJava}
+
+\subsection{Non standard MOPs}
+
+Il MOP di Java si limita a fare introspezione, MOP alternativi possono permettere anche la manipolazione. Ad esempio, con OpenJava abbiamo class-to-class transformation.
+
+Esistono diversi tipi di MOP per Java, i quali funzionano:
+\begin{itemize}
+    \item \textbf{Compile Time:} reflection sui costrutti del linguaggio, si basano su trasformazioni tra sorgenti, i cambiamenti avvengono su tutta la classe. Tra questi rientrano: OpenJava e Reflective Java
+
+    \item \textbf{Load Time:} la reflection viene fatta sul bytecode, basata sulla specializzazione del class loader, non necessario il sorgente, i cambiamenti avvengono per classe. Tra questi: BCEL, ASM, Javassist
+
+    \item \textbf{Run Time (VM-Based):} modifiche alla VM per intercettare eventi, portano a una perdita di portabilità ma permettono modifiche anche al singolo oggetto. Tra questi: MetaXa, Iguana/J
+
+    \item \textbf{Run Time (Proxy-Based):} generazione trasparente di componenti per intercettare, può basarsi sul sorgente o sul modifica/generazione del bytecode (può essere implementato tramite  MOP a compile o load time), i cambiamenti possono essere per oggetto. Tra questi: Dalang/Kava, mChaRM
+\end{itemize}
+
+% Guarda anche ASM per load time
+
+\subsection{Funzionamento di OpenJava}
+% up to s5
+OpenJava è un linguaggio riflessivo derivato da Java, permette al programmatore di estendere un programma sintatticamente e semanticamente. L'attività riflessiva avviene a \textbf{compile-time}, può essere usato per scrivere sia meta che base level.
+
+Senza definire un meta-livello, un programma OpenJava diventa uguale al corrispondente Java.
+
+Le estensioni vengono passate direttamente al compilatore come meta-oggetti, i quali dicono al compilatore come tradurre i componenti del programma. Prima di costruire il bytecode, il compilatore lo traduce in Java puro tramite le direttive dei meta-oggetti.
+
+Prima di compilare il sorgente, il compilatore invoca il metodo \texttt{translate()} del meta-oggetto alla base dell'AST del programma; tale metodo cammina ricorsivamente l'AST traducendo il codice. Estensioni del linguaggio vengono implementate ridefinendo il metodo \texttt{translate()} all'interno della classe corrispondente.
+
+OpenJava lavora per classe, associando ad ogni classe un'altra (il meta-oggetto) che gestisce il processo di traduzione. Meta-oggetti e oggetti interagiscono attraverso un MOP definito.
+
+La programmazione riflessiva in OpenJava si compone di tre passi principali:
+\begin{enumerate}
+    \item Stabilire come il programma base-level deve diventare in seguito alla traduzione
+
+    \item Determinare quali parti del codice base-level saranno inclusi nella traduzione e determinare che codice ausiliario sarà necessario
+
+    \item Scrivere un meta-oggetto che si occupa della traduzione designata
+\end{enumerate}
+Anche se la traduzione è fatta a compile time, la reflective API è molto semplice e assomiglia a quella fornita da \texttt{java.lang.reflect}.
+
+La classe base viene connessa al meta-livello tramite la keyword \texttt{instantiates}, il resto, nel base-level, è codice Java standard
+\begin{minted}{java}
+public class Hello instantiates VerboseClass {
+    public static void main( String[] args ) {
+        hello();
+    }
+    static void hello() {
+        System.out.println( "Hello, world." );
+    }
+}
+\end{minted}
+La frase \texttt{instantiates VerboseClass} dice al compilare che la classe \texttt{Hello} ha una istanza di un meta-oggetto di classe \texttt{VerboseClass}. La classe \texttt{VerboseClass} descrive come la classe \texttt{Hello} deve essere tradotta.
+
+Se la classe \texttt{VerboseClass} volesse rendere verbosa l'esecuzione delle istanze di classe \texttt{Hello}:
+\begin{minted}{java}
+import openjava.mop.*;
+import openjava.ptree.*;
+public class VerboseClass instantiates Metaclass extends OJClass {
+    public void translateDefinition() throws MOPException {
+        OJMethod[] methods = getDeclaredMethods();
+        for (int i = 0; i < methods.length; ++i) {
+            Statement printer = makeStatement(
+            "System.out.println( " + methods[i] + "\" is called.\" );"
+            );
+            methods[i].getBody().insertElementAt( printer, 0 );
+        }
+    }
+}
+\end{minted}
+
+Esecuzione:
+\begin{minted}{c}
+> java Hello
+main is called.
+hello is called.
+Hello, world.
+\end{minted}
+
+Per tale traduzione, \texttt{VerboseClass}:
+\begin{itemize}
+    \item Estende la classe \texttt{openjava.mop.OJClass}
+
+    \item Sovrascrive il metodo \texttt{translateDefinition()} che traduce il corpo dei metodi
+
+    \item I metodi dichiarati nelle classi del base-level sono recuperati tramite una chiamata a \texttt{getDeclaredMethods()}
+
+    \item La chiamata a \texttt{makeStatement()} permette di costruire uno statement a partire da una stringa on-the-fly
+
+    \item Il metodo \texttt{getBody()} torna una lista di statement rappresentanti il corpo del metodo; statement possono essere aggiunti o rimossi da tale rappresentazione
+\end{itemize}

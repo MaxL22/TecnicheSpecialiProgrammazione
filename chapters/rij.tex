@@ -1380,3 +1380,110 @@ Dall'alto verso il basso:
 \end{itemize}
 
 %End L5
+
+%Slide pack 08?
+%Ricordati di capire meglio cosa sono moduli, packages, CLASSPATH
+%Nuova subsection "Modern reflection", Java finisce questa lezione
+
+\subsection{Moduli e Reflection}
+
+Con Java 9 viene introdotta la \textbf{Java Module Platform}, la quale ha gli obiettivi di
+\begin{itemize}
+    \item Fornire una \textbf{configurazione più affidabile}, mirata a rimpiazzare il meccanismo basato sui classpath a favore di un modo per dichiarare esplicitamente le dipendenze
+
+    \item Una \textbf{più forte encapsulation}, per permettere a ciascun componente di dichiarare quale dei suoi tipi pubblici è accessibile ad altri componenti
+\end{itemize}
+
+Un \textbf{modulo} raggruppo classi, interfacce e packages e all'interno di un file \texttt{module-info.java} vengono descritte le dipendenze tra moduli
+\begin{minted}{java}
+module com.foo.bar {
+    requires org.baz.foo;
+    exports com.foo.bar.abc;
+}
+\end{minted}
+Questo file viene incluso nel \texttt{jar}.
+
+%Up to s5, esempio
+I moduli, per come definiti in questo modo, \textit{bloccano la reflection}, in quanto questa non è in grado di "superare" le restrizioni date dai moduli; è necessario che il modulo "destinazione" apra l'accesso al componente su cui si vuole fare reflection.
+
+Alcune soluzioni:
+\begin{itemize}
+    \item Aggiungere \texttt{--add-opens} alla JVM per aprire il modulo; ad esempio, per aprire il pacchetto di \texttt{java.lang}, all'interno del modulo \texttt{java.base} verso tutti i moduli senza nome (non dichiarati esplicitamente)
+    \begin{minted}{c}
+> java --add-opens java.base/java.lang=ALL-UNNAMED ...
+    \end{minted}
+    Ma non è sempre possibile aggiungere flag alla JVM, come ad esempio usando framework e tool specifici
+
+    \item Aprire il pacchetto/modulo attraverso il relativo file \texttt{module-info.java}, ma anche questo non è detto sia sempre applicabile (e.g., progetti complessi in cui il file non è disponibile)
+    \begin{minted}{java}
+module com.foo.bar {
+    opens com.foo.bar.abc to module.with.reflection;
+    requires org.baz.foo;
+    exports com.foo.bar.abc;
+}
+    \end{minted}
+    \begin{minted}{java}
+module module.with.reflection {
+    exports module.with.reflection;
+}
+    \end{minted}
+\end{itemize}
+
+%All'interno di module-info alcuni sono package, altri moduli, buona fortuna per capire quale è quale, hanno lo stesso nome nell'esempio
+% Penso che sia: opens package to module, requires module, exports package, ma controlla
+
+%s8
+Import e require sono sostanzialmente delle dipendenze, le quali vanno risolte ricorsivamente (ogni modulo ha le proprie dipendenze, ma vanno risolute anche quelle dei moduli chiamati da ogni modulo), possono essere anche cicliche.
+
+Può essere pensato come un grafo di dipendente, la quale chiusura transitiva rappresenta il grafo dei moduli, all'interno della quale ogni arco tra nodi (moduli) rappresenta una dipendenza soddisfatta.
+
+Esiste un tool per vedere questa chiusura: \texttt{jdeps}; un semplice esempio:
+\begin{minted}{c}
+> jdeps --module-path out --module com.example.app
+com.example.app -> java.base
+com.example.app -> com.example.utils
+\end{minted}
+dove \texttt{--module-path} specifica la posizione dei moduli compilati, mentre \texttt{--module} specifica i moduli da analizzare.
+
+Anche \texttt{jshell} deve considerare i moduli: va dato il module path
+\begin{minted}{c}
+> jshell
+    --module-path=<path>
+\end{minted}
+Assieme agli import
+\begin{minted}{c}
+    --add-modules=<module>
+\end{minted}
+E alle open da fare
+\begin{minted}{c}
+    --add-exports=<module>/<package>:jshell
+\end{minted}
+Per aprire il package verso la \texttt{jshell}. Al posto di quest'ultimo si può mettere un altro modulo quando usato con \texttt{javac}.
+
+\subsection{Method and Variable Handles}
+
+%s13
+La reflection standard è lenta e non sicura, bypassa molti controlli compile-time e dipende da lookup di stringhe.
+
+Vogliamo sostituire questi lookup con \texttt{MethodHandle} e \texttt{VarHandle}, i quali sono più veloci e fortemente tipizzati. Permettono accesso diretto a campi e metodi, preservando i check a compile-time.
+
+Si ha la classe factory di \texttt{MethodHandles}, la quale permette di creare \texttt{MethodHandle}.
+
+Il \texttt{MethodHandles.Lookup} rappresenta i permessi, ovvero determina cosa è accessibile e controlla anche l'accesso ai campi privati (non si usa più il \texttt{setAccessible()}).
+
+L'oggetto \texttt{lookup} può accedere a tutti i membri della classe che lo ha definito, ma non ai membri privati di altre classi. \texttt{MethodHandles.publicLookup} o \texttt{MethodHandles.privateLookupIn} possono restringere o estendere questi permessi.
+
+Gli handle possono effettuare direttamente loro la reificazione
+\begin{minted}{java}
+VarHandle vh = MethodHandles.lookup()
+    .findVarHandle(Employee.class, "surname", String.class);
+\end{minted}
+oppure trasferirla da un meta-oggetto esistente
+\begin{minted}{java}
+Field f = Employee.class.getDeclaredField("surname");
+f.setAccessible(true);
+VarHandle vh = MethodHandles.lookup().unreflectVarHandle(f);
+\end{minted}
+
+%Newslides, 09, abbiamo finito con Java
+%Il primo parziale arriva fino a qua

@@ -1,0 +1,25 @@
+\section{Aspect Oriented Programming}
+
+%s2,3
+Spesso (ma non sempre), il codice relativo a un certo aspetto (funzione?) è diviso in più punti, ad esempio: all'interno di tomcat
+* il codice per l'xml parsing è tutto in un posto solo, modulare e riutilizzabile
+* il codice per il logging è sparso in tutta la code base, non è modulare, non è riutilizzabile
+%s4
+Avere codice sparpagliato per la stessa funzionalit porta a codice ridondante, lo stesso frammento di codice in più posti diversi, inoltre complica la struttura del codice, rendendolo meno comprensibili (e.g., è molto più facile capire del codice senza un sacco di println in mezzo).
+Questo porta a codice non chiaro e difficile da mantenere.
+
+%s5
+...
+Lo scopo di un concern è chiaro, ha una struttura facilmente definibile, ma l'implementazione porta a mischiare un po' le cose (crosscutting?).
+
+L'obiettivo è riuscire a catturare la struttura dei crosscutting concerns ...
+
+%s6
+Gli aspetti sono due cose:
+* concerns che fanno crosscutting
+* un costrutto del linguaggio di programmazione che abilita unità modulari per i crosscutting concerns
+La prima è solamente a design level, la seconda permette anche l'implementazione.
+
+AspectJ è ...
+
+%s7?

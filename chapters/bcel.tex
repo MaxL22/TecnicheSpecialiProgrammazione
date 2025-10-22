@@ -1,0 +1,280 @@
+%slide tipo 12
+\section{BCEL Byte Code Engineering Library}
+
+BCEL è un toolkit per l'analisi statica e creazione/trasformazione dinamica di class file Java, ora parte dell'Apache project.
+
+Si tratta di un approccio molto a basso livello, mentre Javassist permette una versione più astratta di modifiche al bytecode, BCEL "non ammette ignoranza", cerca di mappare le modifiche 1 a 1 sul class file.
+
+La BCEL API permette di analizzare i \texttt{.class} in Java senza avere a disposizione il sorgente. Le classi vengono viste dal punto di vista del \texttt{.class}, ovvero del class file format (visto in \ref{subsec:classfile}).
+
+BCEL può essere diviso "logicamente" in 2 parti:
+\begin{itemize}
+    \item API statica: accesso read-only ai class file
+
+    \item API dinamica: accesso read-write
+\end{itemize}
+Viene modificata solamente la parte dinamica, tenuta in memoria, generalmente non si modifica la parte statica su disco.
+
+"Fisicamente" è diviso in 4 parti:
+\begin{itemize}
+    \item \texttt{org.apache.bcel.classfile}: una struttura che descrive il class file java e il parser dei class file
+
+    \item \texttt{org.apache.bcel.generic}: codice per modificare i class file e le istruzioni in bytecode
+
+    \item \texttt{org.apache.bcel.util}: utilities i.e., converter da file class a HTML, trovare pattern di istruzioni attraverso regex, \dots
+
+    \item \texttt{org.apache.bcel.verifier}: bytecode verifier (JustIce)
+\end{itemize}
+
+\subsection{\texttt{JavaClass}}
+
+\texttt{org.apache.bcel.classfile.JavaClass} è il "punto di partenza" per ispezionare classi esistenti con BCEL; permette la reificazione, similmente a come fatto da \texttt{java.lang.reflect.Class} nella reflection "classica".
+
+Tutte le istanze \texttt{JavaClass} hanno:
+\begin{itemize}
+    \item Constant pool, campi e metodi
+
+    \item Riferimenti simbolici alla superclasse e alle interfacce implementate
+\end{itemize}
+A runtime, gli oggetti \texttt{JavaClass} possono essere usati come meta-oggetti per descrivere il contenuto di una classe. Contengono metodi per ottenere le informazioni della classe.
+
+In breve, \texttt{JavaClass} rappresenta il class file parsato, si possono fare richieste all'oggetto per ottenere informazioni riguardo alla classe.
+
+\texttt{JavaClass} può essere reificato grazie a
+\begin{itemize}
+    \item I tool forniti da \texttt{org.apache.bcel.generic}
+
+    \item Il \texttt{ClassParser} che parsa un file \texttt{.class} e torna un oggetto di tipo \texttt{JavaClass}
+\end{itemize}
+
+Non c'è più differenza tra costruttori e metodi standard, inoltre, permette di vedere il codice (\texttt{getCode()}, a livello di bytecode), cosa che non si può fare con la reflection normale.
+
+Negli attributi, si trova la \texttt{LineNumberTable}, con all'interno inizio e fine del codice (numero di riga). Fornisce una coppia di valori: numero di riga nel bytecode e numero di riga nel sorgente, rispettivamente.
+
+Usare la classe \texttt{Repository} si può ottenere un \texttt{JavaClass} a partire da un class file:
+\begin{minted}{java}
+JavaClass cls = Repository.lookupClass("java.lang.String");
+\end{minted}
+
+La repository contiene anche metodi per fare l'equivalente dinamico di una \texttt{instanceof}, assieme ad altre funzionalità.
+\begin{minted}{java}
+if (Repository.instanceOf(clazz, super_class)) { ... }
+\end{minted}
+
+Si possono accedere alle informazioni della classe tramite dei get/set:
+\begin{minted}{java}
+import org.apache.bcel.Repository;
+import org.apache.bcel.classfile.*;
+
+public class IntrospectionBCEL {
+    public static void printCode(Method[] methods) {
+        for (var m: methods) {
+            System.out.println(m); // print method signature
+            Code body = m.getCode(); // print bytecode of
+            if (body != null) // non-abstract, non native methods
+                System.out.println(body);
+        }
+    }
+    public static void main(String[] args) {
+        try {
+            JavaClass cls = Repository.lookupClass("java.lang.String");
+            printCode(cls.getMethods());
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+}
+\end{minted}
+
+Esecuzione:
+\begin{minted}{c}
+> java IntrospectionBCEL.java
+public void <init>()
+Code(maxStack = 2, maxLocals = 1, code_length = 23)
+0:  aload_0
+1:  invokespecial   java.lang.Object.<init> ()V (1)
+4:  aload_0
+5:  ldc         "" (7)
+7:  getfield    java.lang.String.value [B (9)
+10: putfield    java.lang.String.value [B (9)
+13: aload_0
+14: ldc         "" (7)
+16: getfield    java.lang.String.coder B (15)
+19: putfield    java.lang.String.coder B (15)
+22: return
+Attribute(s) =
+LineNumberTable:
+LineNumber(0, 245), LineNumber(4, 246),
+    LineNumber(13, 247), LineNumber(22, 248)
+LocalVariableTable:
+LocalVariable(startPc = 0, length = 23,
+    index = 0:java.lang.String this)
+\end{minted}
+
+\subsection{\texttt{ClassGen}}
+
+Il pacchetto \texttt{org.apache.bcel.generic} definisce classi le quali istanze permettono di costruire componenti di classi e di effettuare trasformazioni dinamiche del class file.
+
+Ad esempio, la generic constant pool implementata dalla classe \texttt{ConstantPoolGen} fornisce metodi per introdurre nuovi constant types.
+
+Similmente, \texttt{ClassGen} fornisce metodi per aggiungere o eliminare metodi, campi e attributi della classe.
+
+In breve, gli oggetti \texttt{ClassGen} rappresentano classi che possono essere modificate.
+
+La classe \texttt{Type} permette di astrarre i dettagli della type signature (ad esempio quando vengono definiti nuovi metodi). BCEL fornisce alcune costanti per tipi comuni: \texttt{BOOLEAN}, \texttt{CHAR}, \texttt{FLOAT}, \texttt{INT}, \dots
+
+Esempio: la type signature del \texttt{main()} è rappresentata da
+\begin{minted}{c}
+jshell> import org.apache.bcel.generic.*
+
+jshell> Type ret_type = Type.VOID;
+ret_type ==> void
+
+jshell> Type[] arg_types = new Type[]
+  ...> {new ArrayType(Type.STRING, 1)};
+arg_types ==> Type[1] { java.lang.String[] }
+\end{minted}
+
+I campi sono rappresentati da oggetti di tipo \texttt{FieldGen}. Se hanno i modificatori \texttt{static} e \texttt{final} potrebbero (facoltativo) avere un valore di inizializzazione.
+
+I metodi sono rappresentati da oggetti di tipo \texttt{MethodGen}. Ci sono metodi per
+\begin{itemize}
+    \item  Aggiungere variabili locali
+
+    \item Sollevare eccezioni
+
+    \item Catturare e gestire eccezioni
+\end{itemize}
+
+Le istruzioni sono modellate come oggetti, in modo da permettere una visione ad alto livello del control flow, senza dover gestire dettagli del bytecode, come ad esempio gli indirizzi concreti.
+
+Gli oggetti delle istruzioni sono sostanzialmente formati da un opcode e una lunghezza, in byte.
+
+La classe \texttt{InstructionList} è un container per una lista di \texttt{Instruction}, le quali possono essere inserite, rimosse, \dots; ogni \texttt{Instruction} è wrappata all'interno di un \texttt{InstructionHandles} che funge da iteratore ("interator"?).
+
+Una lista può essere trasformata in un array di bytecode tramite \texttt{getByteCode()}.
+
+Prima creiamo un oggetto \texttt{ClassGen} per rappresentare la classe
+\begin{minted}{java}
+ClassGen cg = new ClassGen("Test","java.lang.Object",
+    "Test.java",ACC_PUBLIC, null);
+\end{minted}
+In ordine: nome della classe, nome della superclasse, nome del file, access flag, lista di interfacce implementate.
+
+Poi possiamo aggiungere un \texttt{field1} di tipo \texttt{int} alla nuova classe
+\begin{minted}{java}
+ConstantPoolGen cp = cg.getConstantPool();
+FieldGen fg = new FieldGen(ACC_PUBLIC,
+    org.apache.bcel.generic.Type.INT,  "field1", cp);
+cg.addField(fg.getField());
+\end{minted}
+In ordine:
+\begin{itemize}
+    \item Creiamo la nuova constant pool, per la classe \texttt{cg} creata in precedenza
+
+    \item Generiamo il nuovo campo, con i parametri: access flag, tipo, nome, constant pool
+
+    \item Aggiungiamo il campo alla classe
+\end{itemize}
+
+Infine, creiamo un nuovo metodo \texttt{method1} senza argomenti o return value, che non fa nient'altro che \texttt{return}
+\begin{minted}{java}
+InstructionList il = new InstructionList();
+il.append(RETURN);
+MethodGen mg = new MethodGen(ACC_PUBLIC,
+    org.apache.bcel.generic.Type.VOID,
+    org.apache.bcel.generic.Type.NO_ARGS, null,
+    "method1","Test", il, cp);
+cg.setMaxStack();
+cg.addMethod(mg.getMethod());
+\end{minted}
+In ordine:
+\begin{itemize}
+    \item Creiamo una nuova \texttt{InstructionList} e ci aggiungiamo le istruzioni necessarie al metodo (appendiamo una singola \texttt{return} in questo caso)
+
+    \item Generiamo un metodo con: access flag, tipo di ritorno, argomenti, nome degli argomenti, nome del metodo, nome della classe che conterrà il metodo, lista di istruzioni, constant pool associato
+
+    \item \texttt{setMaxStack()} calcola la profondità necessaria per lo stack in modo da eseguire le istruzioni del metodo, BCEL determina qual'è il numero massimo di valori che possono trovarsi sullo stack contemporaneamente; questo è necessario per il bytecode, in quanto profondità dello stack e numero massimo di variabili locali vanno dichiarati esplicitamente
+
+    \item Aggiungiamo il metodo alla classe
+\end{itemize}
+
+\subsection{Instrumentation a load time}
+
+Per instrumentare il codice a load time seve un agent esterno che effettua l'instrumentazione stessa. Un agent viene lanciato indicandone la classe e le relative opzioni al momento del lancio della JVM, attraverso l'opzione \texttt{javaagent}.
+
+La classe agente deve implementare un metodo \texttt{premain()} pubblico e statico
+\begin{minted}{java}
+public static void premain(String agentArgs, Instrumentation inst);
+\end{minted}
+
+Dopo che la JVM viene inizializzata
+\begin{itemize}
+    \item Ogni \texttt{premain()} verrà chiamato, nell'ordine in cui sono presentati
+
+    \item In seguito viene chiamato il vero \texttt{main()} dell'applicazione
+\end{itemize}
+
+Ogni agente riceve le proprie opzioni tramite il parametro \texttt{agentArgs}.
+
+Da Java 1.5, il pacchetto \texttt{java.lang.instrument} fornisce servizi che permettono agli agenti Java di instrumentare programmi in esecuzione.
+
+In particolare, definisce due interfacce
+\begin{itemize}
+    \item \texttt{ClassFileTransformer}, un agente fornisce un'implementazione di questa interfaccia per trasformare i class file
+
+    \item \texttt{Instrumentation}, la classe che implementa questa interfaccia fornisce all'agente i servizi necessari per instrumentare il codice Java
+\end{itemize}
+
+Per registrare un \texttt{ClassFileTransformer} come agente, bisogna definire un \texttt{premain()}.
+
+Esempio:
+\begin{minted}{java}
+public class InstrumentorAdaptor implements ClassFileTransformer {
+    private Instrumentor instrumentor;
+    public InstrumentorAdaptor(Instrumentor instrumentor) {
+        this.instrumentor = instrumentor;
+    }
+
+    public byte[] transform(ClassLoader cl, String className,
+            Class classBeingRedefined, ProtectionDomain pd,
+            byte[] classfileBuffer)
+        { ... }
+
+    public static List<AnnotationEntry>
+            getAnnotations(Attribute[] attributes) {
+        List<AnnotationEntry> result = new ArrayList<>();
+        if (attributes != null) {
+            for (Attribute a : attributes) {
+                if (a instanceof RuntimeVisibleAnnotations) {
+                    RuntimeVisibleAnnotations rva =
+                        (RuntimeVisibleAnnotations) a;
+                    for (AnnotationEntry ann : rva.getAnnotationEntries()) {
+                        result.add(ann);
+                        }
+                }
+            }
+        }
+        return result;
+    }
+    public static void premain(String className, Instrumentation i)
+            throws ClassNotFoundException,
+            ReflectiveOperationException {
+        Class instClass = Class.forName(className);
+        Instrumentor inst = (Instrumentor)
+            instClass.getDeclaredConstructor().newInstance();
+        i.addTransformer(new InstrumentorAdaptor(inst));
+    }
+}
+\end{minted}
+
+%TODO From here
+%pack12, slide 21
+
+%s17
+% Dagli esempi spiega cosa sta succedendo, riga per riga
+
+%s25
+% Perché fare un jar?
+
+% Slide 13
